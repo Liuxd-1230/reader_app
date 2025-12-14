@@ -44,7 +44,7 @@
 
 1.  **克隆项目**
     ```bash
-    git clone [https://github.com/yourusername/reader_app.git](https://github.com/yourusername/reader_app.git)
+    git clone https://github.com/Liuxd-1230/reader_app.git
     cd reader_app
     ```
 
