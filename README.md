@@ -1,16 +1,85 @@
-# reader_app
+# 📚 Reader App - 沉浸式 iOS 风格阅读器
 
-A new Flutter project.
+一个基于 Flutter 开发的高颜值电子书阅读器。它结合了 iOS 风格的极致毛玻璃视觉效果、丝滑的交互动画以及AI辅助阅读功能，旨在提供最舒适的移动端阅读体验。
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
 
-A few resources to get you started if this is your first Flutter project:
+## ✨ 核心功能 (Features)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+* **📖 多格式支持**：完美支持 **EPUB** (图文混排)、**PDF** 和 **TXT** (智能分页) 格式。
+* **🎨 极致 UI 设计**：
+    * **全沉浸式体验**：阅读时自动隐藏系统状态栏，菜单唤出时丝滑过渡。
+    * **高性能毛玻璃**：全局统一的磨砂玻璃质感，适配深色/浅色模式（深色模式下呈现黑曜石质感）。
+    * **iOS 风格交互**：弹簧阻尼动画、悬浮胶囊菜单、底部拖拽面板。
+* **🌙 完美深色模式**：
+    * 智能反色引擎：EPUB 阅读器在深色模式下自动反转色彩，保护视力且文字清晰可见。
+    * UI 自适应：菜单和弹窗自动切换为深灰色半透明背景。
+* **🤖 AI 划词解读**：集成 **DeepSeek API**，选中文字即可一键获取 AI 深度解析、翻译或赏析。
+* **⚡ 高效管理**：
+    * **智能书架**：支持文件导入、封面自动解析、长按删除书籍。
+    * **精准跳转**：修复了 EPUB 锚点跳转问题，支持目录章节精准定位。
+    * **进度记忆**：自动记录每一本书的阅读进度（页码或 CFI 位置）。
+* **⚙️ 个性化设置**：
+    * **护眼模式**：支持物理亮度调节及软件层面的暗度遮罩。
+    * **排版调整**：实时调整字号大小。
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠️ 技术栈 (Tech Stack)
+
+* **框架**: [Flutter](https://flutter.dev/) (Dart)
+* **状态管理**: [Flutter Riverpod](https://riverpod.dev/)
+* **数据库**: [Isar Database](https://isar.dev/) (高性能 NoSQL 本地存储)
+* **阅读核心**:
+    * `epub_view`: EPUB 渲染与 CFI 定位
+    * `flutter_pdfview`: PDF 原生渲染
+* **UI 组件**: `dart:ui` (ImageBuffer/Blur), Custom Painters
+* **网络**: `http` (用于 AI API 请求)
+
+## 🚀 快速开始 (Getting Started)
+
+### 环境要求
+* Flutter SDK >= 3.10.0
+* Dart SDK >= 3.0.0
+
+### 安装步骤
+
+1.  **克隆项目**
+    ```bash
+    git clone [https://github.com/yourusername/reader_app.git](https://github.com/yourusername/reader_app.git)
+    cd reader_app
+    ```
+
+2.  **安装依赖**
+    ```bash
+    flutter pub get
+    ```
+
+3.  **生成数据库代码**
+    本项目使用 Isar 数据库，需要运行代码生成器：
+    ```bash
+    dart run build_runner build --delete-conflicting-outputs
+    ```
+
+4.  **配置 API Key (可选)**
+    为了使用 AI 解释功能，请在设置面板中输入你的 DeepSeek API Key，或者在 `lib/data/models/reading_settings.dart` 中配置默认值。
+
+5.  **运行应用**
+    ```bash
+    flutter run
+    ```
+
+## 📂 项目结构 (Project Structure)
+
+```text
+lib/
+├── data/
+│   ├── models/          # 数据模型 (Book, Bookmark, Settings)
+│   └── services/        # 数据库服务 (Isar Service)
+├── screens/
+│   ├── library_screen.dart # 书架主页 (含文件导入、长按删除)
+│   └── reading_screen.dart # 核心阅读页 (含沉浸式逻辑、AI 交互)
+├── widgets/
+│   ├── frosted_glass_container.dart # 核心 UI 组件：通用毛玻璃容器
+│   └── readers/         # 格式专用阅读器封装 (EPUB/PDF)
+├── utils/
+│   └── deepseek_selection_controls.dart # 自定义文本选择菜单 (AI 入口)
+└── main.dart            # 入口文件 & 全局 Theme 配置
