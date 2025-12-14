@@ -1,10 +1,9 @@
-import 'package:flutter/foundation.dart'; // 必须引入，用于 ValueListenable
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter/foundation.dart'; // [新增] 用于 ValueListenable
+import 'package:http/http.dart' as http;  // [新增]
 
-/// 自定义文本选择控制器
 class DeepSeekSelectionControls extends MaterialTextSelectionControls {
-  // 自定义按钮的回调函数
   final Function(String selectedText) onDeepSeekExplain;
 
   DeepSeekSelectionControls({required this.onDeepSeekExplain});
@@ -17,56 +16,73 @@ class DeepSeekSelectionControls extends MaterialTextSelectionControls {
       Offset selectionMidpoint,
       List<TextSelectionPoint> endpoints,
       TextSelectionDelegate delegate,
-      // 【关键修改】这里类型改成了 ValueListenable<ClipboardStatus>?
       ValueListenable<ClipboardStatus>? clipboardStatus,
       Offset? lastSecondaryTapDownPosition,
       ) {
-    // 1. 获取当前选中的文本
-    final TextSelection selection = delegate.textEditingValue.selection;
-    final String selectedText = selection.textInside(delegate.textEditingValue.text);
-
-    // 2. 定义我们的自定义按钮
-    final List<ContextMenuButtonItem> buttonItems = [
-      // 系统"复制"按钮
-      ContextMenuButtonItem(
-        onPressed: () {
-          canCopy(delegate) ? handleCopy(delegate) : null;
-          delegate.hideToolbar();
-        },
-        type: ContextMenuButtonType.copy,
-      ),
-      // 系统"全选"按钮
-      ContextMenuButtonItem(
-        onPressed: () {
-          canSelectAll(delegate) ? handleSelectAll(delegate) : null;
-        },
-        type: ContextMenuButtonType.selectAll,
-      ),
-      // ✨ DeepSeek 解释按钮
-      ContextMenuButtonItem(
-        onPressed: () {
-          if (selectedText.isNotEmpty) {
-            onDeepSeekExplain(selectedText);
+    return TextSelectionToolbar(
+      anchorAbove: endpoints.first.point,
+      anchorBelow: endpoints.last.point,
+      children: [
+        TextSelectionToolbarTextButton(
+          padding: const EdgeInsets.all(8.0),
+          onPressed: () {
+            final TextSelection selection = delegate.textEditingValue.selection;
+            final String text = delegate.textEditingValue.text;
+            if (selection.isValid && !selection.isCollapsed) {
+              final selectedText = text.substring(selection.start, selection.end);
+              delegate.hideToolbar();
+              onDeepSeekExplain(selectedText);
+            }
+          },
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.auto_awesome, size: 16, color: Colors.blue),
+              SizedBox(width: 4),
+              Text('AI 解释', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+        TextSelectionToolbarTextButton(
+          padding: const EdgeInsets.all(8.0),
+          onPressed: () {
+            delegate.copySelection(SelectionChangedCause.toolbar);
             delegate.hideToolbar();
-            // 可选：清除选中状态
-            // delegate.userUpdateTextEditingValue(
-            //   delegate.textEditingValue.copyWith(
-            //     selection: const TextSelection.collapsed(offset: 0),
-            //   ),
-            //   SelectionChangedCause.toolbar,
-            // );
-          }
-        },
-        label: 'DeepSeek解释',
-      ),
-    ];
-
-    // 3. 构建自适应工具栏
-    return AdaptiveTextSelectionToolbar.buttonItems(
-      buttonItems: buttonItems,
-      anchors: TextSelectionToolbarAnchors(
-        primaryAnchor: endpoints.first.point,
-      ),
+          },
+          child: const Text('复制'),
+        ),
+      ],
     );
+  }
+}
+
+Future<String> fetchDeepSeekExplanation(String text, String apiKey) async {
+  if (apiKey.isEmpty) return "请先在设置中配置 API Key";
+
+  try {
+    final response = await http.post(
+      Uri.parse('https://api.deepseek.com/chat/completions'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        "model": "deepseek-chat",
+        "messages": [
+          {"role": "system", "content": "你是一个文学阅读助手。请简短地解释、赏析或翻译用户选中的文本。"},
+          {"role": "user", "content": text}
+        ],
+        "stream": false
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      return data['choices'][0]['message']['content'] ?? "无内容返回";
+    } else {
+      return "请求失败: ${response.statusCode}\n${response.body}";
+    }
+  } catch (e) {
+    return "网络错误: $e";
   }
 }

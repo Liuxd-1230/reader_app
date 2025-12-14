@@ -1,56 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// 1. 主题定义 (保持不变)
 class ReaderTheme {
+  final String name;
   final Color bgColor;
   final Color textColor;
-  const ReaderTheme(this.bgColor, this.textColor);
+  final Color menuColor; // 菜单背景色
+
+  const ReaderTheme(this.name, this.bgColor, this.textColor, this.menuColor);
 }
 
 final List<ReaderTheme> themes = [
-  const ReaderTheme(Color(0xFFF7F1E3), Colors.black87), // 羊皮纸
-  const ReaderTheme(Colors.white, Colors.black),        // 纯白
-  const ReaderTheme(Color(0xFFC8E6C9), Colors.black87), // 护眼绿
-  const ReaderTheme(Color(0xFF1A1A1A), Color(0xFFB0B0B0)), // 深色模式
+  const ReaderTheme("羊皮纸", Color(0xFFFAF9DE), Colors.black87, Color(0xDDFAF9DE)),
+  const ReaderTheme("护眼绿", Color(0xFFC8E6C9), Colors.black87, Color(0xDDC8E6C9)),
+  const ReaderTheme("极简白", Color(0xFFFFFFFF), Colors.black87, Color(0xDDFFFFFF)),
+  const ReaderTheme("深空灰", Color(0xFF1C1C1E), Color(0xFFE5E5E5), Color(0xDD2C2C2E)),
 ];
 
-// 2. 状态数据类 (保持不变)
 class ReadingSettings {
   final double fontSize;
   final int themeIndex;
+  final String? deepSeekApiKey;
+  final double brightness; // 1.0 = 最亮, 0.2 = 最暗
 
-  ReadingSettings({this.fontSize = 18.0, this.themeIndex = 0});
+  const ReadingSettings({
+    this.fontSize = 18.0,
+    this.themeIndex = 0,
+    this.deepSeekApiKey,
+    this.brightness = 1.0,
+  });
 
   ReaderTheme get currentTheme => themes[themeIndex];
 
-  ReadingSettings copyWith({double? fontSize, int? themeIndex}) {
+  ReadingSettings copyWith({double? fontSize, int? themeIndex, String? deepSeekApiKey, double? brightness}) {
     return ReadingSettings(
       fontSize: fontSize ?? this.fontSize,
       themeIndex: themeIndex ?? this.themeIndex,
+      deepSeekApiKey: deepSeekApiKey ?? this.deepSeekApiKey,
+      brightness: brightness ?? this.brightness,
     );
   }
 }
 
-// 3. 【关键修改】使用 Notifier (Riverpod 2.0 新标准)
 class ReadingSettingsNotifier extends Notifier<ReadingSettings> {
   @override
-  ReadingSettings build() {
-    // 初始化状态
-    return ReadingSettings();
-  }
+  ReadingSettings build() => const ReadingSettings();
 
-  void setFontSize(double size) {
-    state = state.copyWith(fontSize: size);
-  }
-
-  void setTheme(int index) {
-    state = state.copyWith(themeIndex: index);
-  }
+  void setFontSize(double size) => state = state.copyWith(fontSize: size);
+  void setTheme(int index) => state = state.copyWith(themeIndex: index);
+  void setApiKey(String key) => state = state.copyWith(deepSeekApiKey: key);
+  void setBrightness(double b) => state = state.copyWith(brightness: b);
 }
 
-// 4. 【关键修改】使用 NotifierProvider
-final readingSettingsProvider =
-NotifierProvider<ReadingSettingsNotifier, ReadingSettings>(() {
+final readingSettingsProvider = NotifierProvider<ReadingSettingsNotifier, ReadingSettings>(() {
   return ReadingSettingsNotifier();
 });

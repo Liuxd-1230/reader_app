@@ -7,7 +7,7 @@ class Bookmark {
   // 通常 v4 依然兼容 Isar.autoIncrement。
 // 如果编辑器报错，请改成：
 
-  int id = Isar.autoIncrement;
+  Id id = Isar.autoIncrement;
 
   // 1. 关联的书籍 ID (通过索引快速查询某本书的所有书签)
   @Index()
